@@ -1,4 +1,4 @@
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, executor
 from gitlab import GitLab
 
 
@@ -16,15 +16,7 @@ class TelegramBot:
         self.__dispatcher = Dispatcher(bot=self.__bot)
         self.__admin_id = admin_id
         self.__git = GitLab(domain, access_token)
-        TelegramBot.__project_name = project_name
-        TelegramBot.__projects_handler = self.__git.get_projects
-        TelegramBot.__commits_handler = self.__git.get_commits
-
-        # kostyli decoratorov - нельзя вызвать декоратор message_handler у объекта-аттрибута Dispatcher
-        TelegramBot.reply_welcome = self.__dispatcher.message_handler(commands=['start'])(TelegramBot.reply_welcome)
-        TelegramBot.get_commits = self.__dispatcher.message_handler(commands=['commits'])(TelegramBot.get_commits)
-        TelegramBot.get_commits = self.__dispatcher.message_handler(commands=['help'])(TelegramBot.reply_help)
-        TelegramBot.reverse_echo = self.__dispatcher.message_handler()(TelegramBot.reverse_echo)
+        self.__project_name = project_name
 
     @property
     def dispatcher(self):
@@ -81,3 +73,15 @@ class TelegramBot:
         await message.reply(f"List of available commands:\n/start - to get first information about bot\n"
                             f"/commits - to get information about all commits from selected project\n"
                             f"any message (not commands) - to get reversed message")
+
+    def start(self):
+        TelegramBot.reply_welcome = self.__dispatcher.message_handler(commands=['start'])(TelegramBot.reply_welcome)
+        TelegramBot.get_commits = self.__dispatcher.message_handler(commands=['commits'])(TelegramBot.get_commits)
+        TelegramBot.reply_help = self.__dispatcher.message_handler(commands=['help'])(TelegramBot.reply_help)
+        TelegramBot.reverse_echo = self.__dispatcher.message_handler()(TelegramBot.reverse_echo)
+        TelegramBot.__project_name = self.__project_name
+        TelegramBot.__projects_handler = self.__git.get_projects
+        TelegramBot.__commits_handler = self.__git.get_commits
+
+        executor.start_polling(self.__dispatcher, skip_updates=True)
+        
