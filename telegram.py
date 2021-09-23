@@ -20,9 +20,10 @@ class TelegramBot:
         TelegramBot.__projects_handler = self.__git.get_projects
         TelegramBot.__commits_handler = self.__git.get_commits
 
-        # Decorators
+        # kostyli decoratorov - нельзя вызвать декоратор message_handler у объекта-аттрибута Dispatcher
         TelegramBot.reply_welcome = self.__dispatcher.message_handler(commands=['start'])(TelegramBot.reply_welcome)
         TelegramBot.get_commits = self.__dispatcher.message_handler(commands=['commits'])(TelegramBot.get_commits)
+        TelegramBot.get_commits = self.__dispatcher.message_handler(commands=['help'])(TelegramBot.reply_help)
         TelegramBot.reverse_echo = self.__dispatcher.message_handler()(TelegramBot.reverse_echo)
 
     @property
@@ -32,25 +33,27 @@ class TelegramBot:
     @staticmethod
     async def reply_welcome(message: types.Message) -> None:
         """
-        This handler will be called when user sends `/start` command.
-        Awaiting for user command.
-        :param message:
+        This handler will be called when user sends `/start` command. Awaiting for user command.
+        Responds with first information about bot to the user who entered the command.
+        :param message: Telegram message received by the bot from the user.
         """
-        await message.reply("Hi!\nI'm Simple ReverseEchoBot!\n")
+        await message.reply("Hi!\nI'm Simple GitLab Bot!\n")
 
     @staticmethod
     async def reverse_echo(message: types.Message) -> None:
         """
-        This handler will be called when user sends any message.
-        Awaiting for user message.
+        This handler will be called when user sends any message. Awaiting for any user message.
+        Answers with reversed message to the user who entered message.
+        :param message: Telegram message received by the bot from the user.
         """
         await message.answer(message.text[::-1])
 
     @staticmethod
     async def get_commits(message: types.Message) -> None:
         """
-        This handler will be called when user sends `/commits` command.
-        Awaiting for user command.
+        This handler will be called when user sends `/commits` command. Awaiting for user command.
+        Responds with all project commits to the user who entered the command.
+        :param message: Telegram message received by the bot from the user.
         """
         commits = []
         for project in TelegramBot.__projects_handler():
@@ -67,3 +70,14 @@ class TelegramBot:
                              f"Committer email: {commit['committer_email']}\n\n"
 
         await message.reply(reply)
+
+    @staticmethod
+    async def reply_help(message: types.Message) -> None:
+        """
+        This handler will be called when user sends `/help` command. Awaiting for user command.
+        Responds with help information to the user who entered the command.
+        :param message: Telegram message received by the bot from the user.
+        """
+        await message.reply(f"List of available commands:\n/start - to get first information about bot\n"
+                            f"/commits - to get information about all commits from selected project\n"
+                            f"any message (not commands) - to get reversed message")
